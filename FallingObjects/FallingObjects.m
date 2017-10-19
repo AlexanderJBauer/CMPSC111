@@ -1,0 +1,95 @@
+% FallingObjects USES ALL THE OTHER FILES IN THIS DIRECTORY. IT PRODUCES THREE
+% GRAPHS/PLOTS AND FOUR TABLES
+
+g = 9.81;   %
+c = .25;    % DEFINES GRAVITY, DRAG COEFFICIENT, AND MASS RESPECTIVELY, WHICH 
+m = 75;     % WERE DEFINED IN THE HOMEWORK ASSIGNTMENT
+
+EulersMethodPlot(.3,15,g,c,m); % CREATES THREE SEPERATE PLOTS OF THE EXACT
+RK2Plot(.3,15,g,c,m);          % SOLUTION VS A NUMERICAL SOLUTION USING A
+RK4Plot(.3,15,g,c,m);          % NUMERICAL METHOD
+
+% THE REMAINDER OF THE PROGRAM DEALS WITH CREATING TABLES WHICH DEMONSTRATE THE
+% ACCURACY OF EULERS METHOD, SECOND ORDER RUNGE-KUTTA METHOD, AND FOURTH ORDER
+% RUNGE-KUTTA METHOD WHEN APPROXIMATING A NUMERICAL SOLUTION TO THE ORDINARY
+% DIFFERENTIAL EQUATION GIVEN IN THE HOMEWORK
+
+% CREATES A MATRIX OF EXACT SOLUTIONS FOR COMPARISON VALUE USEING Analytical
+Exact_Solution = [Analytical(15,g,c,m);Analytical(15,g,c,m);...
+                Analytical(15,g,c,m);Analytical(15,g,c,m);Analytical(15,g,c,m)];
+
+% CREATES A MATRIX OF TIME STEPS
+Time_Step = [.3; .1; .05; .025; .0125];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% CREATES A MATRIX OF NUMERICAL SOLUTIONS USING THE STEP SIZES IN THE Time_Step
+% MATRIX USING EULERS METHOD
+Eulers_Method=[EulersMethod(.3,15,g,c,m);EulersMethod(.1,15,g,c,m);...
+     EulersMethod(.05,15,g,c,m);EulersMethod(.025,15,g,c,m);...
+     EulersMethod(.0125,15,g,c,m)];
+
+% CREATES A MATRIX WITH THE DIFFERENCES BETWEEN THE APPROXIMATED SOLUTION FOUND
+% USING EULERS METHOD AND THE EXACT SOLUTION FOR THE TIME STEPS IN THE 
+% Time_Step MATRIX.
+Difference1 = Eulers_Method - Exact_Solution;
+
+% CREATES A MATRIX WITH THE PERCENT DIFFERENCE BETWEEN THE APPROXIMATED SOLUTION
+% FOUND USING EULERS METHOD AND THE EXACT SOLUTION FOR THE TIME STEPS IN THE 
+% Time_Step MATRIX.
+Percent_Difference1=((Eulers_Method - Exact_Solution)/Analytical(15,g,c,m))*100;
+
+%MAKE TABLE FOR EULERS METHOD
+T1=table(Time_Step,Eulers_Method,Exact_Solution,Difference1,...
+         Percent_Difference1);
+disp(T1); % DISPLAY TABLE
+writetable(T1,'T1.xls','sheet',1,'Range','B2:F7');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% CREATES A MATRIX OF NUMERICAL SOLUTIONS USING THE STEP SIZES IN THE Time_Step
+% MATRIX USING THE SECOND ORDER RUNGE-KUTTA METHOD
+RK_2=[RK2(.3,15,g,c,m);RK2(.1,15,g,c,m);RK2(.05,15,g,c,m);RK2(.025,15,g,c,m);...
+     RK2(.0125,15,g,c,m)];
+
+% CREATES A MATRIX WITH THE DIFFERENCES BETWEEN THE APPROXIMATED SOLUTION FOUND
+% USING SECOND ORDER RUNGE-KUTTA METHOD AND THE EXACT SOLUTION FOR THE TIME 
+% STEPS IN THE Time_Step MATRIX.
+Difference2 = RK_2 - Exact_Solution;
+ 
+% CREATES A MATRIX WITH THE PERCENT DIFFERENCES BETWEEN THE APPROXIMATED 
+% SOLUTION FOUND USING SECOND ORDER RUNGE-KUTTA METHOD AND THE EXACT SOLUTION 
+% FOR THE TIME STEPS IN THE Time_Step MATRIX.
+Percent_Difference2=((RK_2 - Exact_Solution)/Analytical(15,g,c,m))*100;
+
+% MAKE TABLE FOR SECOND ORDER RUNGE-KUTTA METHOD (RK2)
+T2=table(Time_Step,RK_2,Exact_Solution,Difference2,Percent_Difference2);
+disp(T2); % DISPLAY TABLE
+writetable(T2,'T2.xls','sheet',1,'Range','B2:F7');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% CREATES A MATRIX OF NUMERICAL SOLUTIONS USING THE STEP SIZES IN THE Time_Step
+% MATRIX USING THE FOURTH ORDER RUNGE-KUTTA METHOD
+RK_4=[RK4(.3,15,g,c,m);RK4(.1,15,g,c,m);RK4(.05,15,g,c,m);RK4(.025,15,g,c,m);...
+     RK4(.0125,15,g,c,m)];
+ 
+% CREATES A MATRIX WITH THE DIFFERENCES BETWEEN THE APPROXIMATED SOLUTION FOUND
+% USING FOURTH ORDER RUNGE-KUTTA METHOD AND THE EXACT SOLUTION FOR THE TIME 
+% STEPS IN THE Time_Step MATRIX.
+Difference3 = RK_4 - Exact_Solution;
+
+% CREATES A MATRIX WITH THE PERCENT DIFFERENCES BETWEEN THE APPROXIMATED 
+% SOLUTION FOUND USING FOURTH ORDER RUNGE-KUTTA METHOD AND THE EXACT SOLUTION 
+% FOR THE TIME STEPS IN THE Time_Step MATRIX.
+Percent_Difference3=((RK_4 - Exact_Solution)/Analytical(15,g,c,m))*100;
+
+% MAKE TABLE FOR FOURTH ORDER RUNGE-KUTTA METHOD (RK4)
+T3=table(Time_Step,RK_4,Exact_Solution,Difference3,Percent_Difference3);
+disp(T3); % DISPLAY TABLE
+writetable(T3,'T3.xls','sheet',1,'Range','B2:F7');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% DISPLAYS A TABLE THAT SHOWS SOLUTIONS FOUND USING TIME STEPS IN Time_Step
+% MATRIX FOR ALL NUMERICAL SOLUTION METHODS AND THE EXACT SOLUTION
+T4 = table(Time_Step, Eulers_Method, RK_2, RK_4, Exact_Solution);
+disp(T4); % DISPLAY TABLE
+writetable(T4,'T4.xls','sheet',1,'Range','B2:F7');

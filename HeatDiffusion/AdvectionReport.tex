@@ -1,0 +1,398 @@
+\documentclass[12pt]{article}
+
+\usepackage{fancyhdr}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{esint}
+\usepackage{subfigure}
+\usepackage{color}
+\usepackage{moreverb}
+\usepackage{wrapfig}
+\usepackage{csquotes}
+\usepackage{url}
+\graphicspath{ {images/} }
+\textwidth 17cm \topmargin -1cm \oddsidemargin 0cm \textheight 21.5cm
+\pagestyle{empty} \pagestyle{fancyplain}
+\lhead[\fancyplain{}{}]{\fancyplain{}{{\sc Alexander Bauer}}}
+\chead[\fancyplain{}{}]{\fancyplain{}{{\sc Homework 03 Part 2}}}
+\rhead[\fancyplain{}{}]{\fancyplain{}{{\sc Computer Science 111}}}
+
+\newcommand{\etal}{\textit{et al. }}
+
+\begin{document}
+\centerline{\Large\textbf{Diffusion Simulation}}
+\vspace{0cm}
+
+
+\section{Introduction}\label{sec::Intro}
+This is a simulation of advection. Advection is the movement of a substance, in which the properties of the substance are carried with it even though it is moving. Generally the advected substance is a fluid. The properties that are carried along are things like energy. The advection occurs due to a velocity vector field. A good way to imagine advection is to think of a drop of ink being carried off by a river. For this simulation the substance of the material being advected is unknown, and what is causing the velocity vector field is unkown as well. What we do know is this:
+
+\begin{enumerate}
+
+\item The domain of the simulation is in two spacial dimensions:
+$$ \Omega=[\frac{-\pi}{2},\frac{\pi}{2}]^2 $$
+\item The velocity vector field \textbf(U) is given by:
+$$ \textbf{U} = (u,v)^T $$ where $$ u(x,y,t) = -cos(x)sin(y)cos(t) $$ 
+$$ v(x,y,t)=sin(x)cos(y)cos(t) $$
+\item We want to find the solution to $\rho=\rho(x,y,t)$ where $\rho$ satisfies the advection equation:
+$$ \frac{\delta \rho}{\delta t} + \textbf{U}\cdot \bigtriangledown \rho = 0 $$ with boundary conditions:
+$$ \begin{aligned}
+ \rho(x=-\pi / 2) = 0 \\
+ \rho(x=+\pi / 2) = 0 \\
+ \rho(y=-\pi / 2) = 0 \\
+ \rho(y=+\pi / 2) = 0 \\
+ \end{aligned}
+ $$
+ 
+\end{enumerate}
+
+In order to simulate the system given, I set up the initial condition given by these conditions:
+$$ 
+\begin{aligned}
+ \rho(x,y,t=0) = 1 \texttt{ iff } (x,y)\in C, \\
+ \rho(x,y,t=0) = 0 \texttt{ otherwise} \\
+\end{aligned} 
+$$
+where \emph{C} is a circle with center (1,0) and radius .25.
+
+Then I implement the upwind scheme for the advection equation in order to solve for $ \rho $ at $ t_{final}=\pi $. The simulation discretises the domain into 100 grid nodes in each spacial direction. To iterate through the simulation until $ t_{final} $ a time step of $ \Delta t=.2\Delta x $ is used. Where $ \Delta x = x_{max} - x_{min} / N $ where $ N = 100 $ and $ \Delta x = \Delta y $.
+
+\section{Algorithms}
+I implement an upwind scheme to solve the equation numerically. The upwind scheme I used for the advection equation
+\begin{equation}
+\frac{\delta \rho}{\delta t} + \textbf{U}\cdot \bigtriangledown \rho = 0 
+\end{equation}
+is given by taking a first-order forward difference to approximate $ \rho_t $ and a first-order backward difference for $\rho_x $ and $ \rho_y$, which results in this equation:
+\begin{enumerate}
+\item Start with the advection equation:
+$$
+\frac{\delta \rho}{\delta t} + \textbf{U}\cdot \bigtriangledown \rho = 0 $$
+and perform the del operation:
+$$
+\frac{\delta \rho}{\delta t} + \textbf{U}(\frac{\delta \rho}{\delta x}\vec{i}+\frac{\delta \rho}{\delta y}\vec{j}) = 0
+$$
+\item Then distribute \textbf{U} and multiply it times the unit directions to obtain the equation:
+$$
+\frac{\delta \rho}{\delta t} + u\frac{\delta \rho}{\delta x}+v\frac{\delta \rho}{\delta y} = 0
+$$
+\item Take the first-order forward difference to approximate $ \rho_t $
+$$
+\frac{\rho_{i,j}^{n+1}-\rho_{i,j}^{n}}{\Delta t} + u\frac{\delta \rho}{\delta x}+v\frac{\delta \rho}{\delta y} = 0
+$$
+\item Take the first-order backwards difference to approximate $ \rho_x $ and $ \rho_y $
+$$
+\frac{\rho_{i,j}^{n+1}-\rho_{i,j}^{n}}{\Delta t} + u\frac{\rho_{i,j}^{n}-\rho_{i-1,j}^{n}}{\Delta x}+v\frac{\rho_{i,j}^{n}-\rho_{i,j-1}^{n}}{\Delta y} = 0
+$$
+\item Rearrange to obtain a first-order upwind scheme:
+\begin{equation}
+\frac{\rho_{i,j}^{n+1}-\rho_{i,j}^{n}}{\Delta t}= - u\frac{\rho_{i,j}^{n}-\rho_{i-1,j}^{n}}{\Delta x}-v\frac{\rho_{i,j}^{n}-\rho_{i,j-1}^{n}}{\Delta y}
+\end{equation}
+
+where $ \Delta t $ is the time step and $ \Delta x $ and $ \Delta y $ are the spacial resolutions. The superscripts, n, references the time frame and the subscripts, i and j reference the spacial frame. So, n+1, denotes the subsequent time interval and n denotes the current one. i,j represents the grid node we are looking at, i+1,j is the node to the right, i-1,j is the node to the left, i,j+1 is the grid node above, and i,j-1 is the grid node below. $\rho$ represents the equation we are trying to solve for.
+\end{enumerate}
+
+Equation (2) can be rearranged to produce an iteratable equation for solving for $ \rho_{i,j}^{n+1}$:
+\begin{equation}
+\rho_{i,j}^{n+1} = \rho_{i,j}^{n} - \frac{u\Delta t}{\Delta x}(\rho_{i,j}^{n}-\rho_{i-1,j}^{n})-\frac{v\Delta t}{\Delta y}(\rho_{i,j}^{n}-\rho_{i,j-1}^{n})
+\end{equation}
+
+Equation (3) assumes however that the velocity vector field, \textbf{U}, is positive in both the x and y directions. Because our field \textbf{U} is not always positive in both directions, we have to modify our first-order backwards differences with respect to $u$ and $v$. So, depending on the signs of $u$ and $v$ we are left with four different schemes:
+\begin {enumerate}
+\item If $u$ is positive and $v$ is positive at grid node (i,j):
+\begin{equation}
+\rho_{i,j}^{n+1} = \rho_{i,j}^{n} - \frac{u\Delta t}{\Delta x}(\rho_{i,j}^{n}-\rho_{i-1,j}^{n})-\frac{v\Delta t}{\Delta y}(\rho_{i,j}^{n}-\rho_{i,j-1}^{n}) \tag{3.1}
+\end{equation}
+\item If $u$ is positive and $v$ is negative at grid node (i,j):
+\begin{equation}
+\rho_{i,j}^{n+1} = \rho_{i,j}^{n} - \frac{u\Delta t}{\Delta x}(\rho_{i,j}^{n}-\rho_{i-1,j}^{n})-\frac{v\Delta t}{\Delta y}(\rho_{i,j+1}^{n}-\rho_{i,j}^{n}) \tag{3.2}
+\end{equation}
+\item If $u$ is negative and $v$ is positive at grid node (i,j):
+\begin{equation}
+\rho_{i,j}^{n+1} = \rho_{i,j}^{n} - \frac{u\Delta t}{\Delta x}(\rho_{i+1,j}^{n}-\rho_{i,j}^{n})-\frac{v\Delta t}{\Delta y}(\rho_{i,j}^{n}-\rho_{i,j-1}^{n}) \tag{3.3}
+\end{equation}
+\item If $u$ is negative and $v$ is negative at grid node (i,j):
+\begin{equation}
+\rho_{i,j}^{n+1} = \rho_{i,j}^{n} - \frac{u\Delta t}{\Delta x}(\rho_{i+1,j}^{n}-\rho_{i,j}^{n})-\frac{v\Delta t}{\Delta y}(\rho_{i,j+1}^{n}-\rho_{i,j}^{n}) \tag{3.4}
+\end{equation}
+\end{enumerate}
+
+\subsection{My Code}
+My code uses the math presented above. Specifically, my code follows these steps:
+\begin{enumerate}
+\item Set number of nodes, N, equal to 100
+\item Establish the domain through the variables xmin, xmax, ymin, and ymax
+\item Discretise the x and y dimensions and establish variables dx and dy which correspond to $\Delta x$ and $\Delta y$ 
+\item Establish a time step and simulation length.
+\item Set up initial conditions and draw the first frame
+\item Perform this loop until $t_{final}$ is reached.
+	\begin{itemize}
+	\item Calculate $u$ and $v$ for the current time $t$
+	\item Calculate for the boundary conditions
+	\item Update $\rho$ for $t$ + time step using Equations (3.1)-(3.4) depending on the value of $u$ and $v$
+	\item Draw the consecutive frame
+	\item Note: Inside the loop the steps presented above are done for each grid node individually since the velocity vector \textbf{U} has a different value at each grid node and there are conditions for updating $\rho$ that are based on \textbf{U} for a specific grid point. 
+	\end{itemize}
+\end{enumerate}
+
+\section{Results}\label{sec::results}
+In \texttt{MatLab}, my simulation code is invoked at the prompt by calling the script 
+
+\texttt{AdvectionSimulation}
+
+\texttt{AdvectionSimulation}
+will run a simulation with 100 grid nodes along the x-dimension and y-dimension and 500 time steps. The value of $\rho$ is represented on the plot by the z-dimension.
+
+See Figures 1-6 for a look at the velocity vector field \textbf{U} over time:
+
+See Figures 7-16 for a look at the value of $\rho$ over time:
+
+
+
+\section{Conclusion}\label{sec::conclusion}
+I was not able to implement an exact solution, because I was not able to solve for $\rho$ but I believe my simulation is accurate. It is most likely first order accurate, since I implemented a first order upwind scheme as described in the \emph{Algorithms} section. Since there is no source, the value of $\rho$ decreases as it advects over time. The fluid (I take $\rho$ to symbolize a fluid) moves with the vector field and although it dissipates slowly, it never simply dissolves. Because the fluid moves as a whole in accordance with the velocity vector field over time and decreases in value slowly since there is no source, and this is the expected behavior, I believe I have implemented the simulation correctly.
+
+\clearpage
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{VectorField0}
+    \caption{$t=0$ (initial condition)}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{VectorField1}
+    \caption{$t=\frac{t_{final}}{4}$}
+  \end{minipage}
+\end{figure}
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{VectorField3}
+    \caption{$t\approx\frac{t_{final}}{2}$ (just before halfway)}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{VectorField4}
+    \caption{$t\approx\frac{t_{final}}{2}$ (just after halfway)}
+  \end{minipage}
+\end{figure}
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{VectorField5}
+    \caption{$t=3\frac{t_{final}}{4}$}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{VectorField6}
+    \caption{$t=t_{final}$}
+  \end{minipage}
+\end{figure}
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection10.jpg}
+    \caption{$t=0$ (initial condition)}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection11.jpg}
+    \caption{$t=0$ (initial condition) aerial}
+  \end{minipage}
+\end{figure}
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection20.jpg}
+    \caption{$t=\frac{t_{final}}{4}$}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection21.jpg}
+    \caption{$t=\frac{t_{final}}{4}$) aerial}
+  \end{minipage}
+\end{figure}
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection30.jpg}
+    \caption{$t=\frac{t_{final}}{2}$}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection31.jpg}
+    \caption{$t=\frac{t_{final}}{2}$ aerial}
+  \end{minipage}
+\end{figure}
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection40.jpg}
+    \caption{$t=3\frac{t_{final}}{4}$}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection41.jpg}
+    \caption{$t=3\frac{t_{final}}{4}$ aerial}
+  \end{minipage}
+\end{figure}
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection50.jpg}
+    \caption{$t=t_{final}$}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.49\textwidth}
+    \includegraphics[width=\textwidth]{Advection51.jpg}
+    \caption{$t=t_{final}$ aerial}
+  \end{minipage}
+\end{figure}
+
+\appendix
+\section{Implementation in MatLab}\label{sec::appendix}
+
+The \texttt{MatLab} implementation:\newline\newline
+\texttt{AdvectionSimulation.m}
+\begin{verbatimtab}
+close all;
+clear all;
+
+N = 100; % in each spacial direction
+u(N+1,N+1) = 0;
+v(N+1,N+1) = 0;
+p(N+1,N+1) = 0;
+p1(N+1,N+1) = 0;
+
+%Bounds
+xmin = -pi / 2;
+xmax = pi / 2;
+ymin = -pi / 2;
+ymax = pi / 2;
+
+%discretise x and y
+dx = (xmax - xmin)/N;
+x = xmin : dx : xmax;
+dy = (ymax - ymin)/N;
+y = xmin : dx : xmax;
+
+%Time
+timeStep = .2 * dx;
+simLength = pi;
+t = 0;
+
+%%%%%%%%%%%%%%%%%% Initial conditions and initial frame %%%%%%%%%%%%%%%%%%%%%%%%
+for ix = 1:N+1
+    for iy = 1:N+1
+        if (sqrt((x(ix)-1)^2+(y(iy)-0)^2) <= .25)
+            p(iy,ix) = 1;
+        end
+    end
+end
+
+for ix = 1:N+1
+    for iy = 1:N+1
+        u(iy,ix) = -cos(x(ix))*sin(y(iy))*cos(t);
+    end
+end
+for ix = 1:N+1
+    for iy = 1:N+1
+        v(iy,ix) = sin(x(ix))*cos(y(iy))*cos(t);
+    end
+end
+
+mesh(x,y,p); hold on;
+%quiver(x,y,u,v);
+axis([-pi/2 pi/2 -pi/2 pi/2]);
+xlabel('X-Dimension');
+ylabel('Y-Dimension');
+zlabel('Value of P');
+title('Advection Simulation No Source');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%% Loop through until simLength %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+for t = timeStep: timeStep: simLength
+    
+    % Establish u and v for time t %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    for ix = 1:N+1
+        for iy = 1:N+1
+            u(iy,ix) = -cos(x(ix))*sin(y(iy))*cos(t);
+        end
+    end
+    for ix = 1:N+1
+        for iy = 1:N+1
+            v(iy,ix) = sin(x(ix))*cos(y(iy))*cos(t);
+        end
+    end
+    U = u*timeStep/dx; %Variable to make calculations easier to type
+    V = v*timeStep/dy; %Variable to make calculations easier to type
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    %BOUNDARY CONDITIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    for iy = 1:N+1
+        p(iy,1) = 0;
+        p1(iy,1) = 0;
+    end
+    for iy = 1:N+1
+        p(iy,N+1) = 0;
+        p1(iy,N+1) = 0;
+    end
+    for ix = 1:N+1
+        p(1,ix) = 0;
+        p1(1,ix) = 0;
+    end
+    for ix = 1:N+1
+        p(N+1,ix) = 0;
+        p1(N+1,ix) = 0;
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    for ix = 2:N
+        for iy = 2:N
+            if U(iy,ix) >= 0 && V(iy,ix) >= 0
+                p1(iy,ix) = p(iy,ix) - U(iy,ix)*(p(iy,ix)-p(iy,ix-1)) ...
+                           - V(iy,ix)*(p(iy,ix)-p(iy-1,ix));
+            end
+            if U(iy,ix) >= 0 && V(iy,ix) < 0
+                p1(iy,ix) = p(iy,ix) - U(iy,ix)*(p(iy,ix)-p(iy,ix-1)) ...
+                           - V(iy,ix)*(p(iy+1,ix)-p(iy,ix));
+            end
+            if U(iy,ix) < 0 && V(iy,ix) >= 0
+                p1(iy,ix) = p(iy,ix) - U(iy,ix)*(p(iy,ix+1)-p(iy,ix)) ...
+                           - V(iy,ix)*(p(iy,ix)-p(iy-1,ix));
+            end
+            if U(iy,ix) < 0 && V(iy,ix) < 0
+                p1(iy,ix) = p(iy,ix) - U(iy,ix)*(p(iy,ix+1)-p(iy,ix)) ...
+                           - V(iy,ix)*(p(iy+1,ix)-p(iy,ix));
+            end
+        end
+    end
+    
+    p = p1;
+    
+    %%%%%%%%%%%% Plot the current state of the simulation
+    clf;
+    mesh(x,y,p); hold on;
+%    quiver(x,y,u,v);
+    axis([-pi/2 pi/2 -pi/2 pi/2 0 1]);
+    xlabel('X-Dimension');
+    ylabel('Y-Dimension');
+    zlabel('Value of P');
+    title('Advection Simulation No Source');
+%    view(0,90);
+    pause(.02);
+    
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{verbatimtab}
+
+\setcounter{page}{1} \pagestyle{empty}
+
+
+%%%%%%%%%%%
+
+\end{document}
